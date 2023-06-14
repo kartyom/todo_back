@@ -5,34 +5,38 @@ const completed = document.getElementById("footer");
 
 let todoArray = [];
 
-fetch("/todoArray")
-  .then((resp) => resp.json())
-  .then((resp) => {
-    todoArray = resp;
-    render();
+if (localStorage.getItem("todoArray")) {
+  todoArray = JSON.parse(localStorage.getItem("todoArray"));
+  render();
+  updateCompletedCount();
+} else {
+  fetch("/todoArray")
+    .then((resp) => resp.json())
+    .then((resp) => {
+      todoArray = resp;
+      render();
+      updateCompletedCount();
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+}
 
 function sendTodos() {
   fetch("/todoArray", {
     method: "post",
     headers: {
-      "content-type": "aplication/json"
+      "content-type": "application/json",
     },
-    body: JSON.stringify(todoArray)
+    body: JSON.stringify({ todoArray: todoArray }),
   });
 }
 
 function onDelete(index) {
   todoArray.splice(index, 1);
+  sendTodos();
   updateCompletedCount();
   render();
-}
-
-function onEdit(index) {
-  const editedText = prompt("Enter the updated task:");
-  if (editedText) {
-    todoArray[index].text = editedText;
-    render();
-  }
 }
 
 function render() {
@@ -49,17 +53,17 @@ function render() {
     checkbox.checked = todo.isCompleted;
     checkbox.addEventListener("click", () => onCheck(index));
     todoDiv.appendChild(checkbox);
-    
+
     const taskSpan = document.createElement("span");
     taskSpan.className = "task";
     taskSpan.textContent = todo.text;
     todoDiv.appendChild(taskSpan);
-    
+
     const timestampSpan = document.createElement("span");
     timestampSpan.className = "timestamp";
     timestampSpan.textContent = getFormattedTime(todo.timestamp);
     todoDiv.appendChild(timestampSpan);
-    
+
     const editButton = document.createElement("button");
     editButton.className = "edit";
     editButton.textContent = "edit";
@@ -100,6 +104,8 @@ function onEnter(event) {
 function onCheck(index) {
   todoArray[index].isCompleted = !todoArray[index].isCompleted;
   updateCompletedCount();
+
+  sendTodos();
 }
 
 function updateCompletedCount() {
@@ -107,5 +113,4 @@ function updateCompletedCount() {
   completed.textContent = "Completed: " + completedCount;
 }
 
-// Event listeners
-document.getElementById("form").addEventListener("submit", onEnter)});
+document.getElementById("form").addEventListener("submit", onEnter);
