@@ -1,10 +1,24 @@
 import express from "express";
+import mongoose from 'mongoose';
 import fs from "fs";
 
 const app = express();
 
+const URI = 'mongodb+srv://artyomkarapetyan29:Y3qbzbigLPtAVvUA@cluster0.habv5iw.mongodb.net/?retryWrites=true&w=majority';
+
 app.use(express.static("public"));
 app.use(express.json());
+
+async function connect() {
+  try{
+    await mongoose.connect(URI);
+    console.log("Connected with mongo db");
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+connect();
 
 app.get("/", (req, res) => {
   res.redirect("/index.html");
@@ -12,7 +26,6 @@ app.get("/", (req, res) => {
 
 let todoArray = [];
 
-// Load todoArray from file on server startup
 fs.readFile("todoData.json", (err, data) => {
   if (!err && data) {
     todoArray = JSON.parse(data);
@@ -27,7 +40,7 @@ app.post("/todoArray", (req, res) => {
   const { todoArray: updatedTodoArray } = req.body;
   if (Array.isArray(updatedTodoArray)) {
     todoArray = updatedTodoArray;
-    // Save todoArray to file
+
     fs.writeFile("todoData.json", JSON.stringify(todoArray), (err) => {
       if (err) {
         res.status(500).send("Error saving todoArray");
